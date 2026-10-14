@@ -46,18 +46,35 @@ def header(lock):
     dr = ImageDraw.Draw(im); dr.line([0, H - 1, W, H - 1], fill="#DDDAD0")
     return im
 
+import sys
+R2 = len(sys.argv) > 1 and sys.argv[1] == "r2"
+if R2:
+    sets = [("r2-a-piece", "r2-a-lockup", "a-symbol", True), ("r2-b-seal", "r2-b-lockup", "b-symbol", False),
+            ("r2-c-board", "r2-c-lockup", "a-symbol", True)]
+else:
+    sets = [(f"{n}-symbol", f"{n}-lockup", f"{n}-symbol", True) for n in "abc"]
 rows = []
-for n in "abc":
-    sym, lock = f"../concepts/{n}-symbol.svg", f"../concepts/{n}-lockup.svg"
-    L = lid(sym); A, fav = avatar(sym); Hd = header(lock)
+for symn, lockn, smalln, named in sets:
+    sym, lock = f"../concepts/{symn}.svg", f"../concepts/{lockn}.svg"
+    if named:
+        L = lid(sym)
+    else:
+        S = 520; L = Image.new("RGBA", (S, S), BLACK); dr = ImageDraw.Draw(L)
+        for m, t in ((22, 3), (32, 1)): dr.rectangle([m, m, S - m, S - m], outline=GOLD, width=t)
+        lg = colour(sym, GOLD, h=300); L.alpha_composite(lg, ((S - lg.width) // 2, 50))
+        d, w = text_path("Rome Antique", PLAYFAIR, 40, 0, 40, 0.02)
+        t = raster(svg([d], w, 52, fill=IVORY), h=52); L.alpha_composite(t, ((S - t.width) // 2, 388))
+        d, w = text_path("Chaque camp a son histoire", ITALIC, 22, 0, 24, 0.01)
+        t = raster(svg([d], w, 30, fill=GOLD), h=30); L.alpha_composite(t, ((S - t.width) // 2, 450))
+    A, _ = avatar(sym); fav = colour(f"../concepts/{smalln}.svg", BLACK, h=32); Hd = header(lock)
     row = Image.new("RGBA", (1340, 560), "#E9E6DE")
     row.alpha_composite(L, (20, 20))
     row.alpha_composite(A, (570, 40))
-    fb = Image.new("RGBA", (72, 72), "white"); fb.alpha_composite(fav, (20, 20)); row.alpha_composite(fb, (850, 124))
+    fb = Image.new("RGBA", (72, 72), "white"); fb.alpha_composite(fav, ((72 - fav.width) // 2, 20)); row.alpha_composite(fb, (850, 124))
     row.alpha_composite(Hd, (570, 330))
     gold_lock = colour(lock, GOLD, h=56); dark = Image.new("RGBA", (760, 110), BLACK)
     dark.alpha_composite(gold_lock, (28, 27)); row.alpha_composite(dark, (570, 430))
     rows.append(row)
 out = Image.new("RGB", (1340, 560 * 3 + 40), "#E9E6DE")
 for i, r in enumerate(rows): out.paste(r, (0, i * 570 + 10), r)
-out.save("../concepts-situation.png")
+out.save("../concepts-r2-situation.png" if R2 else "../concepts-situation.png")
